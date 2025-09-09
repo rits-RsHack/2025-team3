@@ -1,5 +1,5 @@
 import os
-import time  # timeモジュールをインポート
+import time
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 class GeminiProcessor:
 
     def __init__(self, model_name: str = "gemini-1.5-pro-latest"):
-        # ... (初期化のコードは変更なし)
         load_dotenv()
         self.api_key = os.getenv("GOOGLE_API_KEY")
         if not self.api_key:
@@ -44,12 +43,9 @@ class GeminiProcessor:
 
             print(f"ファイルをアップロードしています: {file_path}...")
             try:
-                # ★★★★★ ここからが修正箇所 ★★★★★
-                # 1. ファイルをアップロード
                 uploaded_file_response = genai.upload_file(path=file_path)
                 print(f"アップロード開始。ファイルID: {uploaded_file_response.name}")
 
-                # 2. ファイルの状態が 'ACTIVE' になるまで待機
                 print("サーバー側でのファイル処理を待機しています...")
                 while uploaded_file_response.state.name == "PROCESSING":
                     time.sleep(5)  # 5秒待機
@@ -64,10 +60,7 @@ class GeminiProcessor:
                     )
 
                 print("ファイルの準備が完了しました (ACTIVE)。")
-                uploaded_file = (
-                    uploaded_file_response  # 準備完了したファイルオブジェクトを使用
-                )
-                # ★★★★★ ここまでが修正箇所 ★★★★★
+                uploaded_file = uploaded_file_response
 
             except Exception as e:
                 raise RuntimeError(

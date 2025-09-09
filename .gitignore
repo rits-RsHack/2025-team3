@@ -1,0 +1,25 @@
+# --- Python / Spleeter ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+core/uploads/
+core/output-python/
+
+# Spleeterがダウンロードするモデルデータ (これが今回の直接の原因)
+core/pretrained_models/
+
+# --- Node.js / Next.js ---
+client/node_modules/
+client/.next/
+client/.DS_Store
+client/*.log
+
+# --- 環境変数ファイル ---
+core/.env
+client/.env.local
+
+# --- その他 ---
+.DS_Store
+audily.db
+*.db
