@@ -1,81 +1,106 @@
 import os
-import io
-import zipfile
-import tempfile
+import shutil # クリーンアップでディレクトリごと消すために追加
 from pathlib import Path
 
-# StreamingResponse と、新しく HTMLResponse をインポート
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import StreamingResponse, HTMLResponse
+# BackgroundTasks をインポート
+from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
+from fastapi.responses import FileResponse
 
-# Spleeterのコアロジックをインポート
+# (他のimport文は変更なし)
 from process_music import Music
+from save_upload import save_upload_file
+from download_processed import create_download_response
 
-# --------------------------------------------------------------------------
-# FastAPIアプリケーションの初期設定
-# --------------------------------------------------------------------------
+# (app = FastAPI() やディレクトリ定義も変更なし)
 app = FastAPI()
+UPLOAD_DIR = Path("./temp_uploads")
+OUTPUT_DIR = Path("./output-python")
+UPLOAD_DIR.mkdir(exist_ok=True)
+OUTPUT_DIR.mkdir(exist_ok=True)
+music_processor = Music(stems="spleeter:5stems")
 
-# Spleeterモデルの読み込み
-try:
-    music_processor = Music(stems="spleeter:5stems")
-except Exception as e:
-    print(f"致命的なエラー: Spleeterモデルの初期化に失敗しました。 {e}")
-    exit(1)
+# --------------------------------------------------------------------------
+# バックグラウンドで実行する重い処理を、別の関数に切り出す 
+# --------------------------------------------------------------------------
+def run_spleeter_separation(temp_filepath: Path, output_dir: Path):
+    """Spleeterの実行と後片付けを行う関数"""
+    try:
+        print(f"バックグラウンド処理を開始: {temp_filepath}")
+        # Spleeterで音楽を分離する
+        music_processor.divide(
+            input_file_path=str(temp_filepath),
+            output_base_dir=str(output_dir)
+        )
+        print(f"バックグラウンド処理が正常に完了: {music_processor.output_directory}")
+    except Exception as e:
+        print(f"バックグラウンド処理中にエラーが発生しました: {e}")
+        # エラーが起きた場合、中途半端な出力ディレクトリが残っていれば削除する
+        if music_processor.output_directory and music_processor.output_directory.exists():
+            shutil.rmtree(music_processor.output_directory)
+    finally:
+        # 成功・失敗にかかわらず、一時的にアップロードしたファイルを削除する
+        if temp_filepath.exists():
+            temp_filepath.unlink()
+            print(f"一時ファイルが削除されました: {temp_filepath}")
 
 # --------------------------------------------------------------------------
 # APIエンドポイントの定義
 # --------------------------------------------------------------------------
 
-
-@app.post("/api/element_divide")
-async def separate_and_download(file: UploadFile = File(...)):
+@app.post("/api/upload")
+async def upload_and_start_separation(
+    background_tasks: BackgroundTasks, # BackgroundTasks を引数で受け取る
+    file: UploadFile = File(...)
+):
     """
-    【同期的処理】
-    音声ファイルをアップロードし、その場で分離処理を実行。
-    結果をZIPファイルにまとめて、レスポンスとして直接ダウンロードさせる。
+    音声ファイルをアップロードし、バックグラウンドで分離処理を開始する。
+    処理を待たずに、すぐに処理ID（ディレクトリ名）を返す。
     """
-    # (この関数の内容は変更ありません)
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir_path = Path(temp_dir)
+    try:
+        # 1. ヘルパーを使ってアップロードされたファイルを安全に保存する
+        # このファイルパスはバックグラウンドタスクに渡される
+        saved_filepath = await save_upload_file(file, UPLOAD_DIR)
         
-        input_filepath = temp_dir_path / file.filename
-        try:
-            with open(input_filepath, "wb") as buffer:
-                buffer.write(await file.read())
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"一時ファイルの保存に失敗しました: {e}")
-        finally:
-            await file.close()
-
-        print(f"分離処理を開始: {input_filepath}")
-        try:
-            music_processor.divide(
-                input_file_path=str(input_filepath), 
-                output_base_dir=str(temp_dir_path)
-            )
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"音楽の分離処理中にエラーが発生しました: {e}")
+        # 2. フロントエンドが後で問い合わせるための一意なID（ディレクトリ名）を決定する
+        # save_upload_file が作るユニークなファイル名から拡張子を除いたものをIDとする
+        output_directory_name = saved_filepath.stem
         
-        output_subdir = music_processor.output_directory
-        if not output_subdir or not output_subdir.exists():
-            raise HTTPException(status_code=404, detail="分離されたファイルが見つかりません。")
-        print(f"分離処理が完了。出力先: {output_subdir}")
-
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_f:
-            for separated_file in output_subdir.glob('*.wav'):
-                zip_f.write(separated_file, separated_file.name)
-        
-        zip_buffer.seek(0)
-        
-        original_stem = Path(file.filename).stem
-        zip_filename = f"{original_stem}_separated.zip"
-
-        print(f"ZIPファイルを生成し、ダウンロードを開始します: {zip_filename}")
-
-        return StreamingResponse(
-            content=zip_buffer,
-            media_type="application/zip",
-            headers={"Content-Disposition": f"attachment; filename={zip_filename}"}
+        # 3.  重い処理をバックグラウンドタスクとして登録 
+        background_tasks.add_task(
+            run_spleeter_separation, # 実行する関数
+            saved_filepath,          # その関数に渡す引数1
+            OUTPUT_DIR               # その関数に渡す引数2
         )
+
+        # 4. 処理の完了を待たずに、すぐにレスポンスを返す！ 
+        print(f"リクエストを受け付けました。処理ID: {output_directory_name}")
+        return {
+            "message": "ファイルのアップロードを受け付け、分離処理を開始しました。",
+            "processing_id": output_directory_name
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ファイルのアップロード処理中にエラーが発生しました: {str(e)}")
+
+
+# (status と download のエンドポイントは変更なしでOK)
+@app.get("/api/status/{dir_name}")
+async def get_separation_status(dir_name: str):
+    # (この関数は変更なし)
+    if ".." in dir_name or "/" in dir_name:
+        raise HTTPException(status_code=400, detail="無効なディレクトリ名です。")
+    target_dir = OUTPUT_DIR / dir_name
+    if target_dir.exists() and target_dir.is_dir():
+        expected_files = ["vocals.wav", "drums.wav", "bass.wav", "other.wav", "piano.wav"]
+        if all((target_dir / f).exists() for f in expected_files):
+            return {"status": "complete"}
+        else:
+            return {"status": "processing"}
+    else:
+        return {"status": "processing"}
+
+@app.get("/api/download/{dir_name}/{filename}")
+async def download_separated_file(dir_name: str, filename: str) -> FileResponse:
+    # (この関数は変更なし)
+    return create_download_response(
+        base_dir=OUTPUT_DIR, dir_name=dir_name, filename=filename
+    )
