@@ -108,3 +108,9 @@
   font-weight: 500;
   color: var(--color-primary);
 }
+
+.errorText {
+  color: #ff4d4d;
+  text-align: center;
+  margin-top: 1rem;
+}

@@ -1,3 +1,4 @@
+/* 既存のスタイル ... */
 .header {
   width: 100%;
   padding: 1rem 2rem;
@@ -25,19 +26,150 @@
   text-decoration: none;
 }
 
-.userMenu {
+.nav {
   display: flex;
   align-items: center;
 }
 
-.userIcon {
-  width: 28px;
-  height: 28px;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: color 0.2s;
+.loginButton {
+  background-color: var(--color-primary);
+  color: var(--color-text-primary);
+  padding: 0.5rem 1.25rem;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s;
 }
 
-.userIcon:hover {
+.loginButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* --- ここから追加・修正 --- */
+
+.skeleton {
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-surface);
+  border-radius: 50%;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.userMenuContainer {
+  position: relative;
+}
+
+.userButton {
+  background-color: transparent;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s;
+}
+
+.userButton:hover,
+.userButton[aria-expanded="true"] {
+  border-color: var(--color-primary);
+}
+
+.userButton svg {
+  color: var(--color-text-secondary);
+  width: 28px;
+  height: 28px;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  width: 220px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.2s ease-out;
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownHeader {
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.username {
+  display: block;
+  font-weight: 700;
   color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.email {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdownMenu ul {
+  list-style: none;
+  padding: 0.5rem 0;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.dropdownItem:hover {
+  background-color: var(--color-primary);
+  color: var(--color-text-primary);
+}
+
+.dropdownItem svg {
+  width: 16px;
+  height: 16px;
 }

@@ -2,26 +2,46 @@
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // useRouterをインポート
+import { useRouter } from 'next/navigation';
+import { signUp } from '@/lib/auth-client';
 import styles from './page.module.css';
 
 export default function SignUpPage() {
-  const router = useRouter(); // routerを初期化
-  const [username, setUsername] = useState('');
+  const router = useRouter();
+  const [username, setUsername] = useState(''); // このstateを使います
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    setError(null);
+
     if (password !== confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords do not match.");
       return;
     }
-    console.log({ username, email, password });
 
-    // 成功したと仮定して、ホームページに遷移
-    router.push('/dashboard');
+    try {
+      // ★★★★★ ここを修正 ★★★★★
+      // 'username' stateの値を 'name' プロパティとして渡す
+      const result = await signUp.email({
+        email: email,
+        password: password,
+        name: username,
+      });
+
+      if (result.error) {
+        setError(result.error.message ?? 'An unknown error occurred.');
+      } else {
+        router.push('/dashboard');
+      }
+
+    } catch (e) {
+      console.error(e);
+      setError('An unexpected network error occurred.');
+    }
   };
 
   return (
@@ -31,6 +51,7 @@ export default function SignUpPage() {
         <p className={styles.subtitle}>Join Audily and start listening.</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          {/* Usernameの入力欄 (この値が 'username' state に保存される) */}
           <div className={styles.inputGroup}>
             <label htmlFor="username" className={styles.label}>Username</label>
             <input
@@ -43,43 +64,21 @@ export default function SignUpPage() {
             />
           </div>
 
+          {/* ... email, password, confirmPassword の input は変更なし ... */}
           <div className={styles.inputGroup}>
             <label htmlFor="email" className={styles.label}>Email Address</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={styles.input}
-              required
-            />
+            <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className={styles.input} required />
           </div>
-
           <div className={styles.inputGroup}>
             <label htmlFor="password" className={styles.label}>Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={styles.input}
-              minLength={8}
-              required
-            />
+            <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} className={styles.input} minLength={8} required />
           </div>
-
           <div className={styles.inputGroup}>
             <label htmlFor="confirmPassword" className={styles.label}>Confirm Password</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={styles.input}
-              minLength={8}
-              required
-            />
+            <input type="password" id="confirmPassword" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={styles.input} minLength={8} required />
           </div>
+
+          {error && <p className={styles.errorText}>{error}</p>}
 
           <button type="submit" className={styles.submitButton}>
             Sign Up
