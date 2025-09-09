@@ -1,26 +1,60 @@
-@import "tailwindcss";
+/* Google Fontsから 'Inter' をインポート */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap");
 
+/* --- CSS変数定義 --- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* カラーパレット */
+  --color-background: #121212;
+  /* 深いダークグレー */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #b3b3b3;
+  /* やや明るいグレー */
+  --color-primary: #6a3de8;
+  /* アクセントカラーの紫 */
+  --color-primary-hover: #582fd6;
+  --color-surface: #1e1e1e;
+  /* カードなどの背景色 */
+
+  /* フォント */
+  --font-family-base:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* --- 基本的なリセット --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* --- 全体のスタイル --- */
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-family-base);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
 }
