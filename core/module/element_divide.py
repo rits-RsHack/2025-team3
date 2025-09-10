@@ -9,7 +9,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse, HTMLResponse
 
 # Spleeterのコアロジックをインポート
-from process_music import Music
+from helper.process_music import Music
 
 # --------------------------------------------------------------------------
 # FastAPIアプリケーションの初期設定
