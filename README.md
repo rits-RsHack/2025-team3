@@ -1,35 +1,55 @@
-# 2025-team3
+# team3 - Audily: Audily
+## サービスの概要
 
-概要
+#### 1.楽曲分離 
+Deezerの Spleeter を利用し、楽曲を自動で「ボーカル」「伴奏」「ドラム」「ベース」「ピアノ」に分離 \
+(出力形式:wav)
 
-Audily WebApp(仮名) は、楽曲をアップロードするだけで以下の3つの機能を提供する音楽体験アプリです。
+#### 2.AIによる楽曲分析機能
+ユーザーが楽曲をアップロードすると、各曲の特徴を解析\
+AIへのプロンプトは変更可能
 
-楽曲分離 (Spleeterベース)
+## プレビュー
+### トップページ
 
-AIによる音楽趣味嗜好分析 & 推奨
+<img width="1920" height="1200" alt="スクリーンショット (57)" src="https://github.com/user-attachments/assets/e75a9e75-df9d-44a5-92e2-3b2d8b4cf26d" />
 
-動画ファイル(MP4)から音声抽出 (MP3変換)
+### ログインページ
 
+<img width="1920" height="1200" alt="スクリーンショット (62)" src="https://github.com/user-attachments/assets/ae8ea335-0da3-4d56-8e45-453c411d3544" />
 
-主な機能
-1.  楽曲分離
+### メニュー画面
 
-Deezerの Spleeter を利用し、楽曲を自動で「ボーカル」「伴奏」「ドラム」「ベース」などに分離
+<img width="1920" height="1200" alt="スクリーンショット (58)" src="https://github.com/user-attachments/assets/b0aaa0aa-f095-437f-8af5-17ab01c421af" />
 
-出力形式: wav(デフォルトだとwavみたいなんで必要に応じて書き換えてください)
+### Source Separation（楽曲分離）
 
-例: vocals.wav と accompaniment.wav を自動生成
+<img width="1920" height="1200" alt="スクリーンショット (59)" src="https://github.com/user-attachments/assets/3d654273-845d-46a8-9eae-d387e537336d" />
 
-2.  AIによる音楽推奨機能
+### AI Music Analysis (楽曲分析)
 
-ユーザーが複数の楽曲をアップロードすると、各曲の特徴（ボーカル比率、ドラムの強さ、テンポなど）を解析
+<img width="1920" height="1200" alt="スクリーンショット (60)" src="https://github.com/user-attachments/assets/c47f7e1b-3378-4a72-8863-190ac5c96198" />
 
-音楽的な傾向を自動で学習し、その人に合いそうな楽曲を提示
+## 使用技術
+使用言語:TypeScript,CSS,JavaScript,Python\
+楽曲分離機能:ffmpeg,Spleeter\
+楽曲分析機能:Gemini API
 
-Spotifyの「あなたへのおすすめ」のような機能を オープンな仕組みで再現
+## 実装した機能
+ログイン機能(メールアドレス+パスワード)
+Source Separation(楽曲分離)
+Music Recomendation(AIによる楽曲分析)
 
-3.  MP4 → MP3 変換
+## 役割分担
+### Zawa
+ユーザー体験の設計と、フロントエンド開発。その他システムの大部分を担当。
 
-アップロードされた動画ファイルから音声部分だけを抽出し、MP3として保存可能
+### Famous
+バックエンドの各機能をクライアント側とデータ通信させるための「APIエンドポイント」の設計、実装、およびテストを担当。
 
-YouTube動画やライブ映像を素材に、すぐに分離＆分析へつなげられる
+## アピールポイント
+AI Music Analysisでは負荷を分散させるために、APIエンドポイントを3つに分割。
+
+## 改善点
+
+## 特にフィードバックが欲しいところ (任意)
