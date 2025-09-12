@@ -1,0 +1,207 @@
+.main {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  background-color: var(#000000);
+  padding: 4rem 2rem;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  color: var(--color-text-body);
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.description {
+  font-size: 1.125rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 3rem;
+  line-height: 1.6;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.fileInputWrapper {
+  width: 100%;
+}
+
+.fileInput {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.fileInputLabel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 20px;
+  border: 2px dashed var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--color-text-secondary);
+  width: 100%;
+}
+
+.fileInputLabel:hover,
+.fileInput:focus+.fileInputLabel {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* --- ボタン共通スタイル --- */
+.submitButton,
+.downloadLink,
+.resetButton {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 320px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px;
+  /* 丸みのある形状 */
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
+  text-decoration: none;
+}
+
+.submitButton:not(:disabled):hover,
+.downloadLink:hover,
+.resetButton:hover {
+  transform: translateY(-2px);
+}
+
+/* --- 各ボタンの個別スタイル --- */
+.submitButton {
+  background-color: var(--color-primary);
+  color: var(--color-text-primary);
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.submitButton:disabled {
+  background-color: var(--color-border);
+  cursor: not-allowed;
+}
+
+.downloadLink {
+  background-color: var(--color-success);
+  color: var(--color-text-primary);
+  margin-top: 1rem;
+}
+
+.downloadLink:hover {
+  background-color: var(--color-success-hover);
+}
+
+.resetButton {
+  background-color: var(--color-secondary);
+  color: var(--color-text-primary);
+  margin-top: 1rem;
+}
+
+.resetButton:hover {
+  background-color: var(--color-secondary-hover);
+}
+
+/* --- ステータス表示エリア --- */
+.statusContainer {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.progressDetail {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.notice {
+  color: var(--color-text-secondary);
+}
+
+.completeTitle {
+  font-size: 1.5rem;
+  color: var(--color-success);
+  font-weight: 700;
+  margin: 0;
+}
+
+/* --- エラー表示 --- */
+.errorContainer {
+  margin-top: 2rem;
+  padding: 20px;
+  background-color: var(--color-error-surface);
+  border: 1px solid var(--color-error);
+  border-radius: 8px;
+  color: var(--color-error);
+  width: 100%;
+}
+
+.errorMessage {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* --- 新しいローディングスピナー --- */
+.spinner {
+  animation: rotate 2s linear infinite;
+  width: 36px;
+  height: 36px;
+}
+
+.path {
+  stroke: var(--color-primary);
+  stroke-linecap: round;
+  animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}

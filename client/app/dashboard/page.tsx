@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import styles from './page.module.css';
 
-// --- 各機能のアイコンをSVGコンポーネントとして定義 ---
 
 const ConverterIcon = () => (
   <svg className={styles.cardIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -24,6 +23,13 @@ const SeparatorIcon = () => (
 const RecommendIcon = () => (
   <svg className={styles.cardIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const SubtitleIcon = () => (
+  <svg className={styles.cardIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <rect x="2" y="3" width="20" height="18" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -59,6 +65,15 @@ export default function HomePage() {
             <h2 className={styles.cardTitle}>Music Recommendation</h2>
             <p className={styles.cardDescription}>
               Discover new music based on your favorite tracks and artists.
+            </p>
+          </Link>
+
+          {/* Card 4: Add Subtitles */}
+          <Link href="/tools/subtitle-adder" className={styles.card}>
+            <SubtitleIcon />
+            <h2 className={styles.cardTitle}>Add Subtitles</h2>
+            <p className={styles.cardDescription}>
+              Automatically generate and burn subtitles into your videos.
             </p>
           </Link>
         </div>

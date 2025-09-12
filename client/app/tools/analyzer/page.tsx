@@ -1,35 +1,37 @@
 'use client';
 
-import { useState, ChangeEvent, FormEvent, useEffect } from 'react';
+import { useState, ChangeEvent, FormEvent, useEffect, useRef } from 'react';
+import { useSession } from '@/lib/auth-client';
 import styles from './page.module.css';
 
-// アイコンコンポーネント (UIの補助として)
 const UploadIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" x2="12" y1="3" y2="15" /></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" x2="12" y1="3" y2="15" /></svg>
 );
 const SpinnerIcon = () => (
   <svg className={styles.spinner} viewBox="0 0 50 50"><circle className={styles.path} cx="25" cy="25" r="20" fill="none" strokeWidth="5"></circle></svg>
 );
 
-// APIレスポンスの型定義
 interface AnalysisResult {
   job_id: string;
   analysis: string;
 }
 
 export default function AnalyzerPage() {
+  const { data: session, isPending: isSessionLoading } = useSession();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [prompt, setPrompt] = useState<string>('この曲の歌詞、歌い方、雰囲気を総合的に分析してください。');
   const [appStatus, setAppStatus] = useState<'idle' | 'uploading' | 'polling' | 'complete' | 'error'>('idle');
   const [jobId, setJobId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Select an audio file and enter your request.');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      handleReset();
       setSelectedFile(file);
       setStatusMessage(`Selected file: ${file.name}`);
     }
@@ -38,8 +40,13 @@ export default function AnalyzerPage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!selectedFile) {
-      setStatusMessage('Please select a file first.');
       setAppStatus('error');
+      setStatusMessage('Please select a file first.');
+      return;
+    }
+    if (!session) {
+      setAppStatus('error');
+      setStatusMessage('You must be logged in to use this feature.');
       return;
     }
 
@@ -49,6 +56,7 @@ export default function AnalyzerPage() {
     const formData = new FormData();
     formData.append('file', selectedFile);
     formData.append('prompt', prompt);
+    formData.append('user_id', session.user.id);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/analyze`, {
@@ -70,13 +78,16 @@ export default function AnalyzerPage() {
   };
 
   useEffect(() => {
-    if (appStatus !== 'polling' || !jobId) return;
+    if (appStatus !== 'polling' || !jobId) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      return;
+    }
     const intervalId = setInterval(async () => {
       try {
         const statusResponse = await fetch(`${API_BASE_URL}/api/analysis-status/${jobId}`);
         const statusData = await statusResponse.json();
         if (statusData.status === 'complete') {
-          clearInterval(intervalId);
+          if (intervalRef.current) clearInterval(intervalRef.current);
           const resultResponse = await fetch(`${API_BASE_URL}/api/analysis-result/${jobId}`);
           const resultData = await resultResponse.json();
           if (!resultResponse.ok) {
@@ -85,18 +96,26 @@ export default function AnalyzerPage() {
           setAnalysisResult(resultData);
           setAppStatus('complete');
           setStatusMessage('Analysis complete!');
+        } else if (statusData.status === 'error') {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          setStatusMessage(statusData.detail || 'An error occurred during processing.');
+          setAppStatus('error');
         }
       } catch (err) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
         console.error(err);
         setStatusMessage(err instanceof Error ? err.message : 'An error occurred while checking status.');
         setAppStatus('error');
-        clearInterval(intervalId);
       }
     }, 5000);
-    return () => clearInterval(intervalId);
+    intervalRef.current = intervalId;
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [appStatus, jobId, API_BASE_URL]);
 
   const handleReset = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
     setSelectedFile(null);
     setPrompt('この曲の歌詞、歌い方、雰囲気を総合的に分析してください。');
     setAppStatus('idle');
@@ -106,8 +125,18 @@ export default function AnalyzerPage() {
   };
 
   const renderContent = () => {
+    if (isSessionLoading) {
+      return (
+        <div className={styles.statusContainer}>
+          <SpinnerIcon />
+          <p>Loading session...</p>
+        </div>
+      )
+    }
+
     switch (appStatus) {
       case 'polling':
+      case 'uploading':
         return (
           <div className={styles.statusContainer}>
             <SpinnerIcon />
@@ -134,7 +163,6 @@ export default function AnalyzerPage() {
           </div>
         );
       case 'idle':
-      case 'uploading':
       default:
         return (
           <form onSubmit={handleSubmit} className={styles.form}>
@@ -147,9 +175,8 @@ export default function AnalyzerPage() {
                 id="file-upload"
                 type="file"
                 onChange={handleFileChange}
-                accept="audio/*,video/*" // 動画も受け付けられるように
+                accept="audio/*,video/*"
                 className={styles.fileInput}
-                disabled={appStatus === 'uploading'}
               />
             </div>
             <div className={styles.formGroup}>
@@ -161,16 +188,16 @@ export default function AnalyzerPage() {
                 className={styles.textarea}
                 rows={3}
                 placeholder="e.g., Analyze the vocal technique and lyrical themes."
-                disabled={appStatus === 'uploading'}
               />
             </div>
             <button
               type="submit"
-              disabled={!selectedFile || appStatus === 'uploading'}
+              disabled={!selectedFile || !session}
               className={styles.actionButton}
             >
-              {appStatus === 'uploading' ? <SpinnerIcon /> : 'Start Analysis'}
+              Start Analysis
             </button>
+            {!session && <p className={styles.errorText}>Please log in to start an analysis.</p>}
           </form>
         );
     }

@@ -19,12 +19,9 @@ export default function LoginPage() {
     try {
       const result = await signIn.email({ email, password });
 
-      // ★★★★★ ここからが修正箇所 ★★★★★
       if (result.error) {
-        // エラーが存在する場合
         setError(result.error.message ?? 'An unknown error occurred.');
       } else {
-        // 成功した場合
         router.push('/dashboard');
       }
 
@@ -37,29 +34,28 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.formContainer}>
-      <h1 className={styles.title}>Welcome Back</h1>
-      <p className={styles.subtitle}>Log in to your Audily account.</p>
+        <h1 className={styles.title}>Welcome Back</h1>
+        <p className={styles.subtitle}>Log in to your Audily account.</p>
         <form onSubmit={handleSubmit} className={styles.form}>
           {/* ... input fields for email and password ... */}
           <div className={styles.inputGroup}>
-          <label htmlFor="email" className={styles.label}>Email Address</label>
+            <label htmlFor="email" className={styles.label}>Email Address</label>
             <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className={styles.input} required />
           </div>
-            <div className={styles.inputGroup}>
-              <div className={styles.passwordHeader}>
+          <div className={styles.inputGroup}>
+            <div className={styles.passwordHeader}>
               <label htmlFor="password" className={styles.label}>Password</label>
-              <Link href="/forgot-password" className={styles.forgotPasswordLink}>Forgot?</Link>
-              </div>
+            </div>
             <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} className={styles.input} required />
           </div>
-              
-              {error && <p className={styles.errorText}>{error}</p>}
+
+          {error && <p className={styles.errorText}>{error}</p>}
           <button type="submit" className={styles.submitButton}>Log In</button>
-              </form>
-                <p className={styles.signupLink}>
+        </form>
+        <p className={styles.signupLink}>
           Don&apos;t have an account? <Link href="/signup">Sign Up</Link>
         </p>
       </div>
-                  </div>
+    </div>
   );
 }

@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-# --- 各モジュールからルーターをインポート ---
-# 既存のelement_divideルーター
+from helper.db_handler import setup_database
 from module.element_divide import router as element_divide_router
+from module.history import router as history_router
+from module.mp4tomp3 import router as mp4_to_mp3_router
 from module.recommend import router as analyze_music_router
+from module.zimaku.add_subtitle import router as add_subtitle_router
 
 app = FastAPI(
     title="Audily Core API",
@@ -14,6 +16,7 @@ app = FastAPI(
 origins = [
     "http://localhost:3000",
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -24,18 +27,24 @@ app.add_middleware(
 
 
 app.include_router(
-    element_divide_router,
-    prefix="/api",  # URLの接頭辞
-    tags=["Audio Separation (Sync)"],  # ドキュメント用のタグ
-)
-app.include_router(
-    analyze_music_router,
-    prefix="/api",  # こちらも同じ接頭辞
-    tags=["Music Analysis (Async)"],  # ドキュメント用のタグ
+    element_divide_router, prefix="/api", tags=["Audio Separation (Sync)"]
 )
 
+app.include_router(analyze_music_router, prefix="/api", tags=["Music Analysis (Async)"])
 
-# --- 3. ルートパスの動作確認用エンドポイント ---
+app.include_router(add_subtitle_router, prefix="/api", tags=["Subtitles"])
+
+app.include_router(mp4_to_mp3_router, prefix="/api", tags=["File Conversion"])
+
+app.include_router(history_router, prefix="/api", tags=["History"])
+
+
+@app.on_event("startup")
+async def startup_event():
+    setup_database()
+
+
 @app.get("/")
 def read_root():
+
     return {"message": "Welcome to Audily Core API"}

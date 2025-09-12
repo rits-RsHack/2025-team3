@@ -3,7 +3,6 @@
   justify-content: center;
   align-items: flex-start;
   min-height: calc(100vh - 80px);
-  /* ヘッダーの高さを考慮 */
   padding: 4rem 2rem;
 }
 
@@ -44,12 +43,16 @@
 .fileLabel {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
-  padding: 0.75rem 1.5rem;
+  padding: 1rem;
   border: 1px dashed var(--color-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  color: var(--color-text-secondary);
+  width: 100%;
+  max-width: 400px;
 }
 
 .fileLabel:hover {
@@ -57,10 +60,23 @@
   color: var(--color-primary);
 }
 
-.submitButton {
+.fileLabel.disabled {
+  cursor: not-allowed;
+  background-color: var(--color-surface);
+  opacity: 0.5;
+}
+
+.fileLabel>span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actionButton {
   display: flex;
   justify-content: center;
   align-items: center;
+  align-self: center;
   width: 100%;
   max-width: 300px;
   background-color: var(--color-primary);
@@ -71,31 +87,76 @@
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
   transition: background-color 0.2s;
 }
 
-.submitButton:hover:not(:disabled) {
+.actionButton:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
 }
 
-.submitButton:disabled {
+.actionButton:disabled {
   background-color: var(--color-border);
   cursor: not-allowed;
+}
+
+.secondaryButton {
+  margin-top: 1rem;
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-self: center;
+  width: 100%;
+  max-width: 300px;
+  padding: 0.875rem;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
 }
 
 .statusArea {
   margin-top: 2rem;
   padding: 1rem;
   min-height: 50px;
-  background-color: var(--color-surface);
   border-radius: 8px;
 }
 
-.statusMessage {
-  color: var(--color-text-secondary);
+.statusArea p {
+  margin: 0;
 }
 
-.errorMessage {
+.resultContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--color-surface);
+  border-radius: 8px;
+  animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.errorText {
   color: #ff4d4d;
   font-weight: 500;
 }

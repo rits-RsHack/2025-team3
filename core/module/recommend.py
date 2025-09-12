@@ -1,49 +1,45 @@
 import multiprocessing
-import os
 import shutil
-# helperパッケージ内のモジュールをインポート
-# (インポートパスを解決するためにsys.pathを追加)
 import sys
 from pathlib import Path
 
-# FastAPIからAPIRouterをインポート
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from helper.db_handler import log_operation
 from helper.gemini import GeminiProcessor
 from helper.process_music import Music
 from helper.save_upload import save_upload_file
 
-# --- APIRouterのインスタンスを作成 ---
-# これがこのモジュール専用のルーターになる
 router = APIRouter()
 
-# --- 定数とディレクトリ設定 ---
-# このモジュール内で完結させる
-UPLOAD_DIR = Path("./temp_uploads")
+UPLOAD_DIR = Path("./temp_uploads_analyze")
 SPLEETER_OUTPUT_DIR = Path("./spleeter_output")
 ANALYSIS_RESULTS_DIR = Path("./analysis_results")
 
 
-# 起動時に一度だけディレクトリをチェック・作成
-# (メインアプリ起動時に実行される)
 @router.on_event("startup")
 async def startup_event():
     UPLOAD_DIR.mkdir(exist_ok=True)
     SPLEETER_OUTPUT_DIR.mkdir(exist_ok=True)
     ANALYSIS_RESULTS_DIR.mkdir(exist_ok=True)
-    print("分析用ディレクトリの準備が完了しました。")
+    print("分析機能用のディレクトリ準備が完了しました。")
 
 
-# --- バックグラウンドプロセスで実行されるワーカー関数 ---
-# (この関数の内容は変更なし)
-def analysis_process_worker(temp_filepath: Path, job_id: str, user_prompt: str):
+def analysis_process_worker(
+    temp_filepath: Path,
+    job_id: str,
+    user_prompt: str,
+    user_id: str,
+    original_filename: str,
+):
     analysis_result_path = ANALYSIS_RESULTS_DIR / f"{job_id}.txt"
     spleeter_job_output_dir = None
     try:
         print(f"[{job_id}] 新規プロセスでモデルを初期化しています...")
         local_music_processor = Music(stems="spleeter:5stems")
-        local_gemini_processor = GeminiProcessor(model_name="gemini-2.5-pro")
+        local_gemini_processor = GeminiProcessor(model_name="gemini-2.5-flash")
         print(f"[{job_id}] モデルの初期化が完了。")
 
         print(f"[{job_id}] Spleeterによるボーカル分離を開始...")
@@ -69,11 +65,27 @@ def analysis_process_worker(temp_filepath: Path, job_id: str, user_prompt: str):
             f.write(analysis_text)
         print(f"[{job_id}] 分析結果を保存しました。")
 
+        # ★★★ 成功時にDBに記録 ★★★
+        log_operation(
+            user_id=user_id,
+            operation_type="music_analysis",
+            source_filename=original_filename,
+            status="completed",
+        )
+
     except Exception as e:
         error_message = f"処理中にエラーが発生しました。\n詳細: {str(e)}"
         with open(analysis_result_path, "w", encoding="utf-8") as f:
             f.write(error_message)
         print(f"[{job_id}] エラーが発生したため、エラー内容をファイルに記録しました。")
+
+        log_operation(
+            user_id=user_id,
+            operation_type="music_analysis",
+            source_filename=original_filename,
+            status=f"failed: {e.__class__.__name__}",
+        )
+
     finally:
         if temp_filepath.exists():
             temp_filepath.unlink()
@@ -82,24 +94,29 @@ def analysis_process_worker(temp_filepath: Path, job_id: str, user_prompt: str):
         print(f"[{job_id}] プロセスがクリーンアップを完了し、終了します。")
 
 
-# --- APIエンドポイントの定義 (@app.post -> @router.post) ---
-
-
 @router.post("/analyze")
 async def start_music_analysis(
     file: UploadFile = File(...),
     prompt: str = Form("この曲の歌詞、歌い方、雰囲気を総合的に分析してください。"),
+    user_id: str = Form(...),
 ):
-    """【受付】リクエストを受け付け、別のプロセスで重い処理を開始する"""
-    # (この関数の内容は変更なし)
     try:
         saved_filepath = await save_upload_file(file, UPLOAD_DIR)
         job_id = saved_filepath.stem
+
+        log_operation(
+            user_id=user_id,
+            operation_type="music_analysis",
+            source_filename=file.filename,
+            status="started",
+        )
+
         process = multiprocessing.Process(
             target=analysis_process_worker,
-            args=(saved_filepath, job_id, prompt),
+            args=(saved_filepath, job_id, prompt, user_id, file.filename),
         )
         process.start()
+
         return {
             "message": "分析リクエストを受け付けました。処理には数分かかることがあります。",
             "job_id": job_id,
@@ -112,8 +129,6 @@ async def start_music_analysis(
 
 @router.get("/analysis-status/{job_id}")
 async def get_analysis_status(job_id: str):
-    """【進捗確認】指定されたjob_idの分析が完了したか確認する。"""
-    # (この関数の内容は変更なし)
     if ".." in job_id or "/" in job_id:
         raise HTTPException(status_code=400, detail="無効なJob IDです。")
     result_file = ANALYSIS_RESULTS_DIR / f"{job_id}.txt"
@@ -125,8 +140,6 @@ async def get_analysis_status(job_id: str):
 
 @router.get("/analysis-result/{job_id}")
 async def get_analysis_result(job_id: str):
-    """【結果取得】完了した分析結果のテキストを返す。"""
-    # (この関数の内容は変更なし)
     if ".." in job_id or "/" in job_id:
         raise HTTPException(status_code=400, detail="無効なJob IDです。")
     result_file = ANALYSIS_RESULTS_DIR / f"{job_id}.txt"

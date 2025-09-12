@@ -1,0 +1,133 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 80px);
+  padding: 4rem 2rem;
+}
+
+.content {
+  width: 100%;
+  max-width: 800px;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.centered {
+  text-align: center;
+  margin-top: 4rem;
+  color: var(--color-text-secondary);
+}
+
+.errorText {
+  color: #ff6b6b;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.historyItem {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: border-color 0.2s;
+}
+
+.historyItem:hover {
+  border-color: var(--color-primary);
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.operationType {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--color-text-primary);
+  text-transform: capitalize;
+}
+
+.status {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  text-transform: uppercase;
+}
+
+.statusstarted {
+  background-color: #4a4a4a;
+  color: #cccccc;
+}
+
+.statuscompleted {
+  background-color: #1e4d2b;
+  color: #6ee7b7;
+}
+
+.statusfailed {
+  background-color: #4d1e1e;
+  color: #fca5a5;
+}
+
+.filename {
+  font-family: monospace;
+  color: var(--color-text-secondary);
+  word-break: break-all;
+  margin-bottom: 0.5rem;
+}
+
+.timestamp {
+  font-size: 0.8rem;
+  color: #888888;
+}
+
+/* Spinner (from other pages) */
+.spinner {
+  animation: rotate 2s linear infinite;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+}
+
+.path {
+  stroke: var(--color-primary);
+  stroke-linecap: round;
+  animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}

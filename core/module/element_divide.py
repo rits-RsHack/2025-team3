@@ -1,66 +1,73 @@
 import io
-# Musicクラスのインポートパスを修正 (moduleディレクトリから見てhelperは一つ上の階層にある)
+import shutil
 import sys
 import tempfile
 import zipfile
 from pathlib import Path
 
-# FastAPIからAPIRouterをインポートする
-from fastapi import APIRouter, File, HTTPException, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
+from helper.db_handler import log_operation
 from helper.process_music import Music
 
-# APIRouterのインスタンスを作成
-# これがこのモジュール専用のミニFastAPIアプリのようになる
 router = APIRouter()
 
-# --- モデルの初期化 ---
-# 注意: モデルの初期化はメインアプリで行うのが望ましいが、
-# ここでMusicクラスを使うために一時的に初期化する。
-# より良い設計は、main.pyで初期化したインスタンスを依存性注入で渡すこと。
+SPLEETER_TEMP_DIR = Path("./spleeter_temp_processing")
+RESULT_ZIPS_DIR = Path("./result_zips")
+SPLEETER_TEMP_DIR.mkdir(exist_ok=True)
+RESULT_ZIPS_DIR.mkdir(exist_ok=True)
+
+
 try:
     music_processor = Music(stems="spleeter:5stems")
 except Exception as e:
-    # 実際のエラーハンドリングはmain.pyに任せるのが良い
-    print(f"警告: element_divide.pyでSpleeterモデルの再初期化を試みました。 {e}")
+    print(f"致命的なエラー: Spleeterモデルの初期化に失敗しました。 {e}")
     music_processor = None
 
 
-# @app.postではなく、@router.post を使う
+def cleanup_file(file_path: Path):
+    """バックグラウンドでファイルを削除する"""
+    if file_path.exists():
+        file_path.unlink()
+        print(f"クリーンアップ: {file_path} を削除しました。")
+
+
 @router.post("/element_divide")
-async def separate_and_download(file: UploadFile = File(...)):
+async def separate_and_get_download_url(
+    file: UploadFile = File(...), user_id: str = Form(...)
+):
     if not music_processor:
         raise HTTPException(
             status_code=503, detail="音楽分離サービスが利用できません。"
         )
 
-    """
-    音声ファイルをアップロードし、分離処理を行い、結果をZIPでダウンロードさせる。
-    """
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir_path = Path(temp_dir)
-        input_filepath = temp_dir_path / file.filename
-        try:
-            with open(input_filepath, "wb") as buffer:
-                buffer.write(await file.read())
-        except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"一時ファイルの保存に失敗しました: {e}"
-            )
-        finally:
-            await file.close()
+    log_operation(
+        user_id=user_id,
+        operation_type="source_separation",
+        source_filename=file.filename,
+        status="started",
+    )
+
+    # 一時ディレクトリではなく、永続的なディレクトリにSpleeterの出力を保存
+    job_id = f"{user_id}_{Path(file.filename).stem}_{Path(tempfile.mktemp()).name}"
+    processing_dir = SPLEETER_TEMP_DIR / job_id
+    processing_dir.mkdir()
+
+    input_filepath = processing_dir / file.filename
+
+    try:
+        with open(input_filepath, "wb") as buffer:
+            buffer.write(await file.read())
+
+        await file.close()
 
         print(f"分離処理を開始: {input_filepath}")
-        try:
-            music_processor.divide(
-                input_file_path=str(input_filepath), output_base_dir=str(temp_dir_path)
-            )
-        except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"音楽の分離処理中にエラーが発生しました: {e}"
-            )
+        music_processor.divide(
+            input_file_path=str(input_filepath), output_base_dir=str(processing_dir)
+        )
 
         output_subdir = music_processor.output_directory
         if not output_subdir or not output_subdir.exists():
@@ -69,19 +76,57 @@ async def separate_and_download(file: UploadFile = File(...)):
             )
         print(f"分離処理が完了。出力先: {output_subdir}")
 
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_f:
+        original_stem = Path(file.filename).stem
+        zip_filename = f"{original_stem}_separated.zip"
+        zip_filepath = RESULT_ZIPS_DIR / zip_filename
+
+        with zipfile.ZipFile(zip_filepath, "w", zipfile.ZIP_DEFLATED) as zip_f:
             for separated_file in output_subdir.glob("*.wav"):
                 zip_f.write(separated_file, arcname=separated_file.name)
 
-        zip_buffer.seek(0)
+        print(f"ZIPファイルを生成しました: {zip_filepath}")
 
-        original_stem = Path(file.filename).stem
-        zip_filename = f"{original_stem}_separated.zip"
-        print(f"ZIPファイルを生成し、ダウンロードを開始します: {zip_filename}")
-
-        return StreamingResponse(
-            content=zip_buffer,
-            media_type="application/zip",
-            headers={"Content-Disposition": f"attachment; filename={zip_filename}"},
+        log_operation(
+            user_id=user_id,
+            operation_type="source_separation",
+            source_filename=file.filename,
+            status="completed",
         )
+
+        return {"message": "Processing complete!", "download_filename": zip_filename}
+
+    except Exception as e:
+        log_operation(
+            user_id=user_id,
+            operation_type="source_separation",
+            source_filename=file.filename,
+            status=f"failed: {e.__class__.__name__}",
+        )
+        if isinstance(e, HTTPException):
+            raise e
+        else:
+            raise HTTPException(
+                status_code=500, detail=f"処理中に予期せぬエラーが発生しました: {e}"
+            )
+    finally:
+        if processing_dir.exists():
+            shutil.rmtree(processing_dir)
+
+
+@router.get("/download-zip/{filename}")
+async def download_separated_zip(filename: str):
+    """生成されたZIPファイルをダウンロードさせるエンドポイント"""
+    if ".." in filename or "/" in filename:
+        raise HTTPException(status_code=400, detail="無効なファイル名です。")
+
+    file_path = RESULT_ZIPS_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="ファイルが見つかりません。")
+
+    # ダウンロード後にファイルを削除するタスクを登録
+    return FileResponse(
+        file_path,
+        media_type="application/zip",
+        filename=filename,
+        background=BackgroundTask(cleanup_file, file_path=file_path),
+    )

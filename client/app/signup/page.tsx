@@ -8,7 +8,7 @@ import styles from './page.module.css';
 
 export default function SignUpPage() {
   const router = useRouter();
-  const [username, setUsername] = useState(''); // このstateを使います
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,8 +24,6 @@ export default function SignUpPage() {
     }
 
     try {
-      // ★★★★★ ここを修正 ★★★★★
-      // 'username' stateの値を 'name' プロパティとして渡す
       const result = await signUp.email({
         email: email,
         password: password,
