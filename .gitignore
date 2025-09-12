@@ -1,4 +1,3 @@
-# --- Python / Spleeter ---
 __pycache__/
 *.pyc
 .venv/
@@ -7,20 +6,17 @@ core/uploads/
 core/output-python/
 core/analysis_results
 
-# Spleeterがダウンロードするモデルデータ (これが今回の直接の原因)
 core/pretrained_models/
+core/result_zips/*.zip
 
-# --- Node.js / Next.js ---
 client/node_modules/
 client/.next/
 client/.DS_Store
 client/*.log
 
-# --- 環境変数ファイル ---
 core/.env
 client/.env.local
 
-# --- その他 ---
 .DS_Store
 audily.db
 *.db
