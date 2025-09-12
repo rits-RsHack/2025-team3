@@ -9,15 +9,15 @@ AIへのプロンプトは変更可能
 
 ## プレビュー
 ### トップページ
-![alt text](<スクリーンショット (57).png>)
+<img width="1920" height="1200" alt="スクリーンショット (57)" src="https://github.com/user-attachments/assets/e75a9e75-df9d-44a5-92e2-3b2d8b4cf26d" />
 ### ログインページ
-![alt text](<スクリーンショット (62).png>)
+<img width="1920" height="1200" alt="スクリーンショット (62)" src="https://github.com/user-attachments/assets/ae8ea335-0da3-4d56-8e45-453c411d3544" />
 ### メニュー画面
-![alt text](<スクリーンショット (58).png>)
+<img width="1920" height="1200" alt="スクリーンショット (58)" src="https://github.com/user-attachments/assets/b0aaa0aa-f095-437f-8af5-17ab01c421af" />
 ### Source Separation（楽曲分離）
-![alt text](<スクリーンショット (59).png>)
+<img width="1920" height="1200" alt="スクリーンショット (59)" src="https://github.com/user-attachments/assets/3d654273-845d-46a8-9eae-d387e537336d" />
 ### AI Music Analysis (楽曲分析)
-![alt text](<スクリーンショット (60).png>)
+<img width="1920" height="1200" alt="スクリーンショット (60)" src="https://github.com/user-attachments/assets/c47f7e1b-3378-4a72-8863-190ac5c96198" />
 
 ## 使用技術
 使用言語:TypeScript,CSS,JavaScript,Python\
