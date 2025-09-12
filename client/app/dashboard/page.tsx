@@ -54,7 +54,7 @@ export default function HomePage() {
           </Link>
 
           {/* Card 3: Recommendations */}
-          <Link href="/tools/recommend" className={styles.card}>
+          <Link href="/tools/analyzer" className={styles.card}>
             <RecommendIcon />
             <h2 className={styles.cardTitle}>Music Recommendation</h2>
             <p className={styles.cardDescription}>
