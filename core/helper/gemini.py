@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 class GeminiProcessor:
 
-    def __init__(self, model_name: str = "gemini-1.5-pro-latest"):
+    def __init__(self, model_name: str = "gemini-2.5-pro-latest"):
         load_dotenv()
         self.api_key = os.getenv("GOOGLE_API_KEY")
         if not self.api_key:

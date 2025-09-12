@@ -5,6 +5,7 @@ __pycache__/
 venv/
 core/uploads/
 core/output-python/
+core/analysis_results
 
 # Spleeterがダウンロードするモデルデータ (これが今回の直接の原因)
 core/pretrained_models/
